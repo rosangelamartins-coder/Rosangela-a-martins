@@ -24,58 +24,42 @@ import {
   GraduationCap,
   Stethoscope,
   CheckCircle,
+  PlayCircle,
   RefreshCw,
-  HelpCircle,
   Languages,
-  ChevronDown
+  ChevronDown,
+  ClipboardList
 } from 'lucide-react';
 import { GIFTED_CONTENT, LANGUAGES, Language } from './data/content';
 import { GoogleGenAI } from "@google/genai";
 import Markdown from 'react-markdown';
+import GiftednessChecklist from './components/GiftednessChecklist';
 
-type SectionId = 'overview' | 'discovery' | 'testing' | 'costs' | 'parenting' | 'proscons' | 'local' | 'quiz';
+type SectionId = 'overview' | 'discovery' | 'testing' | 'parenting' | 'proscons' | 'local' | 'checklist' | 'schoolImprovement';
 
 export default function App() {
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguage] = useState<Language>('pt');
   const [activeSection, setActiveSection] = useState<SectionId>('overview');
   const [citySearch, setCitySearch] = useState('');
   const [searchResult, setSearchResult] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [groundingLinks, setGroundingLinks] = useState<{ uri: string; title: string }[]>([]);
   const [showLangMenu, setShowLangMenu] = useState(false);
+  const [expandedSchoolSection, setExpandedSchoolSection] = useState<number | null>(null);
+  const [expandedOverviewSection, setExpandedOverviewSection] = useState<number | null>(null);
 
   const content = GIFTED_CONTENT[language];
-
-  // Quiz State
-  const [quizAnswers, setQuizAnswers] = useState<Record<number, boolean>>({});
-  const [showQuizResult, setShowQuizResult] = useState(false);
 
   const navItems = [
     { id: 'overview', label: content.nav.overview, icon: Brain },
     { id: 'discovery', label: content.nav.discovery, icon: Search },
     { id: 'testing', label: content.nav.testing, icon: ClipboardCheck },
-    { id: 'quiz', label: content.nav.quiz, icon: HelpCircle },
-    { id: 'costs', label: content.nav.costs, icon: DollarSign },
-    { id: 'parenting', label: content.nav.parenting, icon: Heart },
+    { id: 'checklist', label: content.nav.checklist, icon: ClipboardList },
+    { id: 'schoolImprovement', label: content.nav.schoolImprovement, icon: GraduationCap },
     { id: 'proscons', label: content.nav.proscons, icon: PlusCircle },
+    { id: 'parenting', label: content.nav.parenting, icon: Heart },
     { id: 'local', label: content.nav.local, icon: MapPin },
   ];
-
-  const handleQuizAnswer = (questionId: number, answer: boolean) => {
-    setQuizAnswers(prev => ({ ...prev, [questionId]: answer }));
-  };
-
-  const calculateQuizResult = () => {
-    const score = Object.values(quizAnswers).filter(Boolean).length;
-    return content.screeningQuiz.results.find(
-      (r: any) => score >= r.minScore && score <= r.maxScore
-    );
-  };
-
-  const resetQuiz = () => {
-    setQuizAnswers({});
-    setShowQuizResult(false);
-  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,26 +104,26 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-[#1A1A1A] font-sans selection:bg-indigo-100 selection:text-indigo-900">
+    <div className="min-h-screen bg-[#F7FAF8] text-[#2D3A30] font-sans selection:bg-[#E2F0E9] selection:text-[#3D5245]">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+      <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-md border-b border-[#E1EDE6] print:hidden">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-[#8FB996] rounded-lg flex items-center justify-center shadow-sm">
               <Lightbulb className="text-white w-5 h-5" />
             </div>
-            <h1 className="text-xl font-semibold tracking-tight">GiftedMind</h1>
+            <h1 className="text-xl font-serif font-bold tracking-tight text-[#3D5245]">Gifted Minds</h1>
           </div>
           <div className="flex items-center gap-4">
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden md:flex items-center gap-2">
               {navItems.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id as SectionId)}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                     activeSection === item.id 
-                      ? 'bg-indigo-50 text-indigo-600' 
-                      : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'bg-[#E2F0E9] text-[#3D5245]' 
+                      : 'text-[#627A6C] hover:text-[#2D3A30] hover:bg-[#F0FAF4]'
                   }`}
                 >
                   {item.label}
@@ -151,9 +135,9 @@ export default function App() {
             <div className="relative">
               <button
                 onClick={() => setShowLangMenu(!showLangMenu)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-100 hover:bg-gray-50 transition-all text-sm font-medium"
+                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[#E1EDE6] hover:bg-white transition-all text-sm font-medium"
               >
-                <Languages size={18} className="text-indigo-600" />
+                <Languages size={18} className="text-[#8FB996]" />
                 <span className="hidden sm:inline">{LANGUAGES.find(l => l.code === language)?.flag}</span>
                 <ChevronDown size={14} className={`transition-transform ${showLangMenu ? 'rotate-180' : ''}`} />
               </button>
@@ -164,7 +148,7 @@ export default function App() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
-                    className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 overflow-hidden z-[60]"
+                    className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-[#E1EDE6] py-2 overflow-hidden z-[60]"
                   >
                     {LANGUAGES.map((lang) => (
                       <button
@@ -175,8 +159,8 @@ export default function App() {
                         }}
                         className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
                           language === lang.code 
-                            ? 'bg-indigo-50 text-indigo-600 font-bold' 
-                            : 'text-gray-600 hover:bg-gray-50'
+                            ? 'bg-[#E2F0E9] text-[#3D5245] font-bold' 
+                            : 'text-[#627A6C] hover:bg-[#F7FAF8]'
                         }`}
                       >
                         <span>{lang.flag}</span>
@@ -194,15 +178,15 @@ export default function App() {
       <main className="max-w-6xl mx-auto px-4 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Sidebar Navigation (Mobile) */}
-          <div className="lg:hidden flex overflow-x-auto pb-4 gap-2 no-scrollbar">
+          <div className="lg:hidden flex overflow-x-auto pb-4 gap-2 no-scrollbar print:hidden">
             {navItems.map((item) => (
-              <button
+                  <button
                 key={item.id}
                 onClick={() => setActiveSection(item.id as SectionId)}
                 className={`flex-shrink-0 flex items-center gap-2 px-4 py-3 rounded-2xl border transition-all ${
                   activeSection === item.id
-                    ? 'bg-white border-indigo-200 shadow-sm text-indigo-600'
-                    : 'bg-white border-gray-100 text-gray-500'
+                    ? 'bg-white border-[#C9DED2] shadow-sm text-[#3D5245]'
+                    : 'bg-white border-[#E1EDE6] text-[#627A6C]'
                 }`}
               >
                 <item.icon size={18} />
@@ -212,20 +196,20 @@ export default function App() {
           </div>
 
           {/* Left Sidebar (Desktop) */}
-          <aside className="hidden lg:block lg:col-span-3 space-y-2">
+          <aside className="hidden lg:block lg:col-span-3 space-y-2 print:hidden">
             <div className="sticky top-28">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 px-4">{content.sidebar.navigation}</p>
+              <p className="text-xs font-bold text-[#A7BDB1] uppercase tracking-widest mb-6 px-4">{content.sidebar.navigation}</p>
               {navItems.map((item) => (
-                <button
+                  <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id as SectionId)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group ${
                     activeSection === item.id
-                      ? 'bg-white shadow-sm text-indigo-600 ring-1 ring-black/5'
-                      : 'text-gray-500 hover:bg-white/50 hover:text-gray-900'
+                      ? 'bg-white shadow-sm text-[#3D5245] ring-1 ring-black/5'
+                      : 'text-[#627A6C] hover:bg-white/50 hover:text-[#2D3A30]'
                   }`}
                 >
-                  <item.icon size={20} className={activeSection === item.id ? 'text-indigo-600' : 'text-gray-400 group-hover:text-gray-600'} />
+                  <item.icon size={20} className={activeSection === item.id ? 'text-[#8FB996]' : 'text-[#C9DED2] group-hover:text-[#A7BDB1]'} />
                   <span className="font-medium">{item.label}</span>
                   {activeSection === item.id && (
                     <motion.div layoutId="active-indicator" className="ml-auto">
@@ -235,15 +219,20 @@ export default function App() {
                 </button>
               ))}
               
-              <div className="mt-12 p-6 bg-indigo-600 rounded-3xl text-white relative overflow-hidden">
+              <a 
+                href="https://wa.me/5511942771412" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="mt-12 p-8 bg-[#8FB996] rounded-[2rem] text-white relative overflow-hidden shadow-lg shadow-[#8FB996]/20 block hover:scale-[1.02] transition-transform cursor-pointer"
+              >
                 <div className="relative z-10">
-                  <h3 className="font-semibold mb-2">{content.sidebar.needHelp}</h3>
-                  <p className="text-indigo-100 text-sm leading-relaxed">
+                  <h3 className="font-serif text-lg font-bold mb-2">{content.sidebar.needHelp}</h3>
+                  <p className="text-white/90 text-sm leading-relaxed opacity-90">
                     {content.sidebar.helpText}
                   </p>
                 </div>
                 <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
-              </div>
+              </a>
             </div>
           </aside>
 
@@ -261,68 +250,255 @@ export default function App() {
                 {activeSection === 'overview' && (
                   <div className="space-y-12">
                     <div className="max-w-2xl">
-                      <h2 className="text-4xl font-bold tracking-tight mb-4">{content.overview.title}</h2>
-                      <p className="text-xl text-gray-600 leading-relaxed">
+                      <h2 className="text-5xl font-serif font-bold tracking-tight mb-4 text-[#2D3A30]">{content.overview.title}</h2>
+                      <p className="text-xl text-[#4F6153] leading-relaxed font-serif italic">
                         {content.overview.description}
                       </p>
                     </div>
                     
                     <div className="space-y-6">
-                      <h3 className="text-2xl font-bold flex items-center gap-2">
-                        <Brain className="text-indigo-600" size={24} />
-                        {content.overview.traitsTitle}
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {content.overview.traits.map((trait: string, i: number) => (
-                          <div key={i} className="p-6 bg-white rounded-3xl border border-gray-100 flex gap-4 items-start shadow-sm hover:shadow-md transition-shadow">
-                            <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                              <Info className="text-indigo-600 w-5 h-5" />
+                      <div className="grid grid-cols-1 gap-4">
+                        {/* Section 1: Traits */}
+                        <div className="bg-white rounded-[2rem] border border-[#EBF2EE] shadow-sm overflow-hidden">
+                          <button
+                            onClick={() => setExpandedOverviewSection(expandedOverviewSection === 0 ? null : 0)}
+                            className="w-full p-8 flex items-center justify-between hover:bg-[#F7FAF8] transition-colors text-left"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-2xl bg-[#F0FAF4] flex items-center justify-center flex-shrink-0">
+                                <Brain className="text-[#8FB996] w-5 h-5" />
+                              </div>
+                              <span className="text-xl font-serif font-bold text-[#3D5245]">{content.overview.traitsTitle}</span>
                             </div>
-                            <p className="text-gray-700 font-medium leading-snug">{trait}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                            <ChevronDown 
+                              size={20} 
+                              className={`text-[#A7BDB1] transition-transform duration-300 ${expandedOverviewSection === 0 ? 'rotate-180 text-[#8FB996]' : 'rotate-0'}`} 
+                            />
+                          </button>
+                          <AnimatePresence>
+                            {expandedOverviewSection === 0 && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="border-t border-[#F7FAF8]"
+                              >
+                                <div className="p-8 space-y-6">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {content.overview.traits.map((trait: string, i: number) => (
+                                      <div key={i} className="p-6 bg-[#F7FAF8]/50 rounded-[1.5rem] border border-[#EBF2EE] flex gap-4 items-start transition-all">
+                                        <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                                          <Info className="text-[#8FB996] w-4 h-4" />
+                                        </div>
+                                        <p className="text-[#3D5245] font-medium leading-snug">{trait}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
 
-                    <div className="space-y-6">
-                      <h3 className="text-2xl font-bold flex items-center gap-2">
-                        <ClipboardCheck className="text-indigo-600" size={24} />
-                        {content.overview.iqTitle}
-                      </h3>
-                      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-                        <table className="w-full text-left border-collapse">
-                          <thead>
-                            <tr className="bg-gray-50 border-b border-gray-100">
-                              <th className="px-6 py-4 text-sm font-bold text-gray-400 uppercase tracking-widest">{content.overview.iqHeaders.classification}</th>
-                              <th className="px-6 py-4 text-sm font-bold text-gray-400 uppercase tracking-widest">{content.overview.iqHeaders.range}</th>
-                              <th className="px-6 py-4 text-sm font-bold text-gray-400 uppercase tracking-widest">{content.overview.iqHeaders.prevalence}</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-50">
-                            {content.overview.iqRanges.map((range: any, i: number) => (
-                              <tr key={i} className="hover:bg-gray-50/50 transition-colors">
-                                <td className="px-6 py-4 font-bold text-gray-800">{range.label}</td>
-                                <td className="px-6 py-4 text-indigo-600 font-mono font-bold">{range.range}</td>
-                                <td className="px-6 py-4 text-gray-500 text-sm">{range.percent}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
+                        {/* Section 2: IQ Ranges */}
+                        <div className="bg-white rounded-[2rem] border border-[#EBF2EE] shadow-sm overflow-hidden">
+                          <button
+                            onClick={() => setExpandedOverviewSection(expandedOverviewSection === 1 ? null : 1)}
+                            className="w-full p-8 flex items-center justify-between hover:bg-[#F7FAF8] transition-colors text-left"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-2xl bg-[#F0FAF4] flex items-center justify-center flex-shrink-0">
+                                <ClipboardCheck className="text-[#8FB996] w-5 h-5" />
+                              </div>
+                              <span className="text-xl font-serif font-bold text-[#3D5245]">{content.overview.iqTitle}</span>
+                            </div>
+                            <ChevronDown 
+                              size={20} 
+                              className={`text-[#A7BDB1] transition-transform duration-300 ${expandedOverviewSection === 1 ? 'rotate-180 text-[#8FB996]' : 'rotate-0'}`} 
+                            />
+                          </button>
+                          <AnimatePresence>
+                            {expandedOverviewSection === 1 && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="border-t border-[#F7FAF8]"
+                              >
+                                <div className="p-8 space-y-6">
+                                  <div className="bg-white rounded-[1.5rem] border border-[#EBF2EE] shadow-sm overflow-hidden">
+                                    <table className="w-full text-left border-collapse">
+                                      <thead>
+                                        <tr className="bg-[#F7FAF8] border-b border-[#EBF2EE]">
+                                          <th className="px-8 py-5 text-xs font-bold text-[#A7BDB1] uppercase tracking-widest">{content.overview.iqHeaders.classification}</th>
+                                          <th className="px-8 py-5 text-xs font-bold text-[#A7BDB1] uppercase tracking-widest">{content.overview.iqHeaders.range}</th>
+                                          <th className="px-8 py-5 text-xs font-bold text-[#A7BDB1] uppercase tracking-widest">{content.overview.iqHeaders.prevalence}</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-[#F7FAF8]">
+                                        {content.overview.iqRanges.map((range: any, i: number) => (
+                                          <tr key={i} className="hover:bg-[#F0FAF4]/30 transition-colors">
+                                            <td className="px-8 py-5 font-serif text-lg font-bold text-[#3D5245]">{range.label}</td>
+                                            <td className="px-8 py-5 text-[#5E8B6F] font-mono font-bold">{range.range}</td>
+                                            <td className="px-8 py-5 text-[#627A6C] text-sm">{range.percent}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                  <div className="p-6 bg-[#F0FAF4] rounded-2xl border border-[#D6E7DD]">
+                                    <p className="text-sm text-[#3D5245] font-medium leading-relaxed italic">
+                                      {content.overview.iqAverages}
+                                    </p>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
 
-                    <div className="space-y-6">
-                      <h3 className="text-2xl font-bold flex items-center gap-2">
-                        <PlusCircle className="text-indigo-600" size={24} />
-                        {content.overview.factorsTitle}
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {content.overview.factors.map((factor: any, i: number) => (
-                          <div key={i} className="p-8 bg-white rounded-3xl border border-gray-100 shadow-sm hover:border-indigo-200 transition-all">
-                            <h4 className="text-xl font-bold mb-3 text-indigo-600">{factor.title}</h4>
-                            <p className="text-gray-600 leading-relaxed">{factor.text}</p>
-                          </div>
-                        ))}
+                        {/* Section 3: Factors */}
+                        <div className="bg-white rounded-[2rem] border border-[#EBF2EE] shadow-sm overflow-hidden">
+                          <button
+                            onClick={() => setExpandedOverviewSection(expandedOverviewSection === 2 ? null : 2)}
+                            className="w-full p-8 flex items-center justify-between hover:bg-[#F7FAF8] transition-colors text-left"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-2xl bg-[#F0FAF4] flex items-center justify-center flex-shrink-0">
+                                <PlusCircle className="text-[#8FB996] w-5 h-5" />
+                              </div>
+                              <span className="text-xl font-serif font-bold text-[#3D5245]">{content.overview.factorsTitle}</span>
+                            </div>
+                            <ChevronDown 
+                              size={20} 
+                              className={`text-[#A7BDB1] transition-transform duration-300 ${expandedOverviewSection === 2 ? 'rotate-180 text-[#8FB996]' : 'rotate-0'}`} 
+                            />
+                          </button>
+                          <AnimatePresence>
+                            {expandedOverviewSection === 2 && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="border-t border-[#F7FAF8]"
+                              >
+                                <div className="p-8 space-y-6">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {content.overview.factors.map((factor: any, i: number) => (
+                                      <div key={i} className="p-8 bg-[#F7FAF8]/50 rounded-[1.5rem] border border-[#EBF2EE] shadow-sm hover:border-[#C9DED2] transition-all">
+                                        <h4 className="text-xl font-serif font-bold mb-3 text-[#3D5245]">{factor.title}</h4>
+                                        <p className="text-[#4F6153] leading-relaxed">{factor.text}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+
+                        {/* Section 4: Videos */}
+                        <div className="bg-white rounded-[2rem] border border-[#EBF2EE] shadow-sm overflow-hidden">
+                          <button
+                            onClick={() => setExpandedOverviewSection(expandedOverviewSection === 3 ? null : 3)}
+                            className="w-full p-8 flex items-center justify-between hover:bg-[#F7FAF8] transition-colors text-left"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-2xl bg-[#F0FAF4] flex items-center justify-center flex-shrink-0">
+                                <PlayCircle className="text-[#8FB996] w-5 h-5" />
+                              </div>
+                              <span className="text-xl font-serif font-bold text-[#3D5245]">{content.overview.videosTitle}</span>
+                            </div>
+                            <ChevronDown 
+                              size={20} 
+                              className={`text-[#A7BDB1] transition-transform duration-300 ${expandedOverviewSection === 3 ? 'rotate-180 text-[#8FB996]' : 'rotate-0'}`} 
+                            />
+                          </button>
+                          <AnimatePresence>
+                            {expandedOverviewSection === 3 && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="border-t border-[#F7FAF8]"
+                              >
+                                <div className="p-8 space-y-6">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {(content.overview.videos || []).map((video: any, i: number) => (
+                                      <a 
+                                        key={i} 
+                                        href={video.url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="p-6 bg-[#F7FAF8]/50 rounded-[1.5rem] border border-[#EBF2EE] flex gap-4 items-center transition-all hover:border-[#8FB996] hover:shadow-md group"
+                                      >
+                                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-sm group-hover:bg-[#8FB996] group-hover:text-white transition-colors">
+                                          <PlayCircle className="w-5 h-5" />
+                                        </div>
+                                        <span className="text-[#3D5245] font-medium leading-snug group-hover:text-[#2D3A30]">{video.title}</span>
+                                        <ExternalLink size={14} className="ml-auto text-[#A7BDB1] group-hover:text-[#8FB996]" />
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+
+                        {/* Section 5: Legislation */}
+                        <div className="bg-white rounded-[2rem] border border-[#EBF2EE] shadow-sm overflow-hidden">
+                          <button
+                            onClick={() => setExpandedOverviewSection(expandedOverviewSection === 4 ? null : 4)}
+                            className="w-full p-8 flex items-center justify-between hover:bg-[#F7FAF8] transition-colors text-left"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-2xl bg-[#F0FAF4] flex items-center justify-center flex-shrink-0">
+                                <Scale className="text-[#8FB996] w-5 h-5" />
+                              </div>
+                              <span className="text-xl font-serif font-bold text-[#3D5245]">{content.overview.legislationTitle}</span>
+                            </div>
+                            <ChevronDown 
+                              size={20} 
+                              className={`text-[#A7BDB1] transition-transform duration-300 ${expandedOverviewSection === 4 ? 'rotate-180 text-[#8FB996]' : 'rotate-0'}`} 
+                            />
+                          </button>
+                          <AnimatePresence>
+                            {expandedOverviewSection === 4 && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="border-t border-[#F7FAF8]"
+                              >
+                                <div className="p-8 space-y-6">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {(content.overview.legislationLinks || []).map((link: any, i: number) => (
+                                      <a 
+                                        key={i} 
+                                        href={link.url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="p-6 bg-[#F7FAF8]/50 rounded-[1.5rem] border border-[#EBF2EE] flex gap-4 items-center transition-all hover:border-[#8FB996] hover:shadow-md group"
+                                      >
+                                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0 shadow-sm group-hover:bg-[#8FB996] group-hover:text-white transition-colors">
+                                          <Scale className="w-5 h-5" />
+                                        </div>
+                                        <span className="text-[#3D5245] font-medium leading-snug group-hover:text-[#2D3A30]">{link.title}</span>
+                                        <ExternalLink size={14} className="ml-auto text-[#A7BDB1] group-hover:text-[#8FB996]" />
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -330,19 +506,19 @@ export default function App() {
 
                 {activeSection === 'discovery' && (
                   <div className="space-y-8">
-                    <h2 className="text-4xl font-bold tracking-tight">{content.discovery.title}</h2>
+                    <h2 className="text-5xl font-serif font-bold tracking-tight text-[#2D3A30]">{content.discovery.title}</h2>
                     <div className="space-y-6">
                       {content.discovery.steps.map((step: any, i: number) => (
                         <div key={i} className="group relative pl-12 pb-8 last:pb-0">
                           {i !== content.discovery.steps.length - 1 && (
-                            <div className="absolute left-[19px] top-10 bottom-0 w-px bg-gray-200" />
+                            <div className="absolute left-[19px] top-10 bottom-0 w-px bg-[#EBF2EE]" />
                           )}
-                          <div className="absolute left-0 top-0 w-10 h-10 rounded-full bg-white border-2 border-indigo-600 flex items-center justify-center z-10">
-                            <span className="text-indigo-600 font-bold text-sm">{i + 1}</span>
+                          <div className="absolute left-0 top-0 w-10 h-10 rounded-full bg-white border-2 border-[#8FB996] flex items-center justify-center z-10 shadow-sm">
+                            <span className="text-[#8FB996] font-bold text-sm">{i + 1}</span>
                           </div>
-                          <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm group-hover:shadow-md transition-all">
-                            <h3 className="text-xl font-bold mb-3">{step.subtitle}</h3>
-                            <p className="text-gray-600 leading-relaxed">{step.text}</p>
+                          <div className="bg-white p-8 rounded-[2rem] border border-[#EBF2EE] shadow-sm group-hover:shadow-md transition-all">
+                            <h3 className="text-xl font-serif font-bold mb-3 text-[#3D5245]">{step.subtitle}</h3>
+                            <p className="text-[#4F6153] leading-relaxed">{step.text}</p>
                           </div>
                         </div>
                       ))}
@@ -352,82 +528,104 @@ export default function App() {
 
                 {activeSection === 'testing' && (
                   <div className="space-y-12">
-                    <h2 className="text-4xl font-bold tracking-tight">{content.testing.title}</h2>
+                    <h2 className="text-5xl font-serif font-bold tracking-tight text-[#2D3A30]">{content.testing.title}</h2>
                     
                     <div className="space-y-8">
                       <div>
-                        <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                            <span className="text-indigo-600 text-sm">01</span>
+                        <h3 className="text-2xl font-serif font-bold mb-6 flex items-center gap-3 text-[#3D5245]">
+                          <div className="w-8 h-8 rounded-full bg-[#F0FAF4] flex items-center justify-center">
+                            <span className="text-[#8FB996] text-xs font-bold font-sans">01</span>
                           </div>
                           {content.testing.earlyTitle}
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                           {content.testing.earlyChildhood.map((test: any, i: number) => (
-                            <div key={i} className="p-6 bg-white rounded-3xl border border-gray-100 shadow-sm hover:border-indigo-200 transition-all">
-                              <div className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2">{test.ageRange}</div>
-                              <h4 className="text-xl font-bold mb-2">{test.name}</h4>
-                              <p className="text-gray-600 text-sm leading-relaxed">{test.description}</p>
+                            <div key={i} className="p-8 bg-white rounded-[2rem] border border-[#EBF2EE] shadow-sm hover:border-[#C9DED2] transition-all">
+                              <div className="text-[10px] font-bold text-[#8FB996] uppercase tracking-wider mb-2">{test.ageRange}</div>
+                              <h4 className="text-xl font-serif font-bold mb-2 text-[#3D5245]">{test.name}</h4>
+                              <p className="text-[#627A6C] text-sm leading-relaxed">{test.description}</p>
                             </div>
                           ))}
                         </div>
                       </div>
 
                       <div>
-                        <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                            <span className="text-indigo-600 text-sm">02</span>
+                        <h3 className="text-2xl font-serif font-bold mb-6 flex items-center gap-3 text-[#3D5245]">
+                          <div className="w-8 h-8 rounded-full bg-[#F0FAF4] flex items-center justify-center">
+                            <span className="text-[#8FB996] text-xs font-bold font-sans">02</span>
                           </div>
                           {content.testing.schoolTitle}
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                           {content.testing.schoolAge.map((test: any, i: number) => (
-                            <div key={i} className="p-6 bg-white rounded-3xl border border-gray-100 shadow-sm hover:border-indigo-200 transition-all">
-                              <div className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2">{test.ageRange}</div>
-                              <h4 className="text-xl font-bold mb-2">{test.name}</h4>
-                              <p className="text-gray-600 text-sm leading-relaxed">{test.description}</p>
+                            <div key={i} className="p-8 bg-white rounded-[2rem] border border-[#EBF2EE] shadow-sm hover:border-[#C9DED2] transition-all">
+                              <div className="text-[10px] font-bold text-[#8FB996] uppercase tracking-wider mb-2">{test.ageRange}</div>
+                              <h4 className="text-xl font-serif font-bold mb-2 text-[#3D5245]">{test.name}</h4>
+                              <p className="text-[#627A6C] text-sm leading-relaxed">{test.description}</p>
                             </div>
                           ))}
                         </div>
                       </div>
                     </div>
 
-                    <div className="p-8 bg-indigo-600 rounded-[2rem] text-white">
-                      <h4 className="text-xl font-bold mb-4">{content.testing.footerTitle}</h4>
-                      <p className="text-indigo-100 leading-relaxed mb-6">
+                    <div className="p-10 bg-[#8FB996] rounded-[3rem] text-white shadow-lg shadow-[#8FB996]/20">
+                      <h4 className="text-2xl font-serif font-bold mb-4">{content.testing.footerTitle}</h4>
+                      <p className="text-white/90 leading-relaxed mb-8 italic">
                         {content.testing.footerText}
                       </p>
-                    </div>
-                  </div>
-                )}
-
-                {activeSection === 'costs' && (
-                  <div className="space-y-8">
-                    <h2 className="text-4xl font-bold tracking-tight">{content.costs.title}</h2>
-                    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
-                      <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-100">
-                        {content.costs.details.map((item: any, i: number) => (
-                          <div key={i} className="p-10 flex flex-col items-center text-center space-y-4">
-                            <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">{item.category}</span>
-                            <div className="text-4xl font-black text-indigo-600">{item.price}</div>
-                            <p className="text-gray-600 text-sm leading-relaxed">{item.info}</p>
-                          </div>
-                        ))}
+                      <div className="p-6 bg-white/10 rounded-2xl border border-white/20 text-xs italic text-white/50 font-medium">
+                        {content.testing.disclaimer}
                       </div>
                     </div>
                   </div>
                 )}
 
-                {activeSection === 'parenting' && (
+                {activeSection === 'checklist' && (
+                  <GiftednessChecklist content={content} />
+                )}
+
+                {activeSection === 'schoolImprovement' && (
                   <div className="space-y-8">
-                    <h2 className="text-4xl font-bold tracking-tight">{content.parenting.title}</h2>
+                    <div className="max-w-2xl">
+                      <h2 className="text-5xl font-serif font-bold tracking-tight mb-4 text-[#2D3A30]">{content.schoolImprovement.title}</h2>
+                      <p className="text-xl text-[#4F6153] leading-relaxed font-serif italic">
+                        {content.schoolImprovement.subtitle}
+                      </p>
+                    </div>
+
                     <div className="grid grid-cols-1 gap-4">
-                      {content.parenting.strategies.map((strategy: string, i: number) => (
-                        <div key={i} className="p-6 bg-white rounded-2xl border border-gray-100 flex gap-4 items-center shadow-sm hover:translate-x-2 transition-transform">
-                          <div className="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center flex-shrink-0">
-                            <Heart className="text-rose-500 w-6 h-6" />
-                          </div>
-                          <p className="text-gray-800 font-medium">{strategy}</p>
+                      {content.schoolImprovement.sections.map((section: any, i: number) => (
+                        <div key={i} className="bg-white rounded-[2rem] border border-[#EBF2EE] shadow-sm overflow-hidden">
+                          <button
+                            onClick={() => setExpandedSchoolSection(expandedSchoolSection === i ? null : i)}
+                            className="w-full p-8 flex items-center justify-between hover:bg-[#F7FAF8] transition-colors text-left"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-2xl bg-[#F0FAF4] flex items-center justify-center flex-shrink-0">
+                                <CheckCircle className="text-[#8FB996] w-5 h-5" />
+                              </div>
+                              <span className="text-lg font-serif font-bold text-[#3D5245]">{section.title}</span>
+                            </div>
+                            <ChevronDown 
+                              size={20} 
+                              className={`text-[#A7BDB1] transition-transform duration-300 ${expandedSchoolSection === i ? 'rotate-180 text-[#8FB996]' : 'rotate-0'}`} 
+                            />
+                          </button>
+                          <AnimatePresence>
+                            {expandedSchoolSection === i && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="border-t border-[#F7FAF8]"
+                              >
+                                <div className="p-8 bg-[#F0FAF4]/30 text-[#4F6153] leading-relaxed font-serif italic">
+                                  {section.content}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </div>
                       ))}
                     </div>
@@ -436,21 +634,21 @@ export default function App() {
 
                 {activeSection === 'proscons' && (
                   <div className="space-y-8">
-                    <h2 className="text-4xl font-bold tracking-tight">{content.prosCons.title}</h2>
+                    <h2 className="text-5xl font-serif font-bold tracking-tight text-[#2D3A30]">{content.prosCons.title}</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {/* Pros */}
                       <div className="space-y-6">
-                        <div className="flex items-center gap-3 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-full w-fit font-bold text-sm">
-                          <PlusCircle size={18} />
+                        <div className="flex items-center gap-3 px-6 py-3 bg-[#E2F0E9] text-[#3D5245] rounded-full w-fit font-bold text-xs uppercase tracking-widest shadow-sm">
+                          <PlusCircle size={18} className="text-[#8FB996]" />
                           {content.prosCons.prosTitle}
                         </div>
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                           {content.prosCons.pros.map((pro: string, i: number) => (
-                            <div key={i} className="p-5 bg-white rounded-2xl border border-gray-100 flex gap-4 items-start shadow-sm">
-                              <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <span className="text-emerald-700 text-xs font-bold">{i + 1}</span>
+                            <div key={i} className="p-6 bg-white rounded-[2rem] border border-[#EBF2EE] flex gap-4 items-start shadow-sm hover:shadow-md transition-all">
+                              <div className="w-8 h-8 rounded-full bg-[#E2F0E9] flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-[#3D5245] text-xs font-bold font-sans">{i + 1}</span>
                               </div>
-                              <p className="text-gray-700 text-sm font-medium leading-relaxed">{pro}</p>
+                              <p className="text-[#4F6153] text-sm font-medium leading-relaxed">{pro}</p>
                             </div>
                           ))}
                         </div>
@@ -458,17 +656,17 @@ export default function App() {
 
                       {/* Cons */}
                       <div className="space-y-6">
-                        <div className="flex items-center gap-3 px-4 py-2 bg-rose-50 text-rose-700 rounded-full w-fit font-bold text-sm">
-                          <MinusCircle size={18} />
+                        <div className="flex items-center gap-3 px-6 py-3 bg-[#FAF3F3] text-[#634545] rounded-full w-fit font-bold text-xs uppercase tracking-widest shadow-sm">
+                          <MinusCircle size={18} className="text-[#B98F8F]" />
                           {content.prosCons.consTitle}
                         </div>
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                           {content.prosCons.cons.map((con: string, i: number) => (
-                            <div key={i} className="p-5 bg-white rounded-2xl border border-gray-100 flex gap-4 items-start shadow-sm">
-                              <div className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <span className="text-rose-700 text-xs font-bold">{i + 1}</span>
+                            <div key={i} className="p-6 bg-white rounded-[2rem] border border-[#EBF2EE] flex gap-4 items-start shadow-sm hover:shadow-md transition-all">
+                              <div className="w-8 h-8 rounded-full bg-[#FAF3F3] flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-[#634545] text-xs font-bold font-sans">{i + 1}</span>
                               </div>
-                              <p className="text-gray-700 text-sm font-medium leading-relaxed">{con}</p>
+                              <p className="text-[#4F6153] text-sm font-medium leading-relaxed">{con}</p>
                             </div>
                           ))}
                         </div>
@@ -477,138 +675,44 @@ export default function App() {
                   </div>
                 )}
 
-                {activeSection === 'quiz' && (
+                {activeSection === 'parenting' && (
                   <div className="space-y-8">
-                    <div className="max-w-2xl">
-                      <h2 className="text-4xl font-bold tracking-tight mb-4">{content.screeningQuiz.title}</h2>
-                      <p className="text-xl text-gray-600 leading-relaxed">
-                        {content.screeningQuiz.description}
-                      </p>
-                    </div>
-
-                    {!showQuizResult ? (
-                      <div className="space-y-6">
-                        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-                          <div className="p-8 space-y-8">
-                            {content.screeningQuiz.questions.map((q: any) => (
-                              <div key={q.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-2xl hover:bg-gray-50 transition-colors">
-                                <p className="text-gray-800 font-medium flex-1">{q.text}</p>
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() => handleQuizAnswer(q.id, true)}
-                                    className={`px-6 py-2 rounded-xl font-bold text-sm transition-all ${
-                                      quizAnswers[q.id] === true
-                                        ? 'bg-indigo-600 text-white shadow-md'
-                                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                                    }`}
-                                  >
-                                    {content.screeningQuiz.yes}
-                                  </button>
-                                  <button
-                                    onClick={() => handleQuizAnswer(q.id, false)}
-                                    className={`px-6 py-2 rounded-xl font-bold text-sm transition-all ${
-                                      quizAnswers[q.id] === false
-                                        ? 'bg-rose-600 text-white shadow-md'
-                                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                                    }`}
-                                  >
-                                    {content.screeningQuiz.no}
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
+                    <h2 className="text-5xl font-serif font-bold tracking-tight text-[#2D3A30]">{content.parenting.title}</h2>
+                    <div className="grid grid-cols-1 gap-4">
+                      {content.parenting.strategies.map((strategy: string, i: number) => (
+                        <div key={i} className="p-8 bg-white rounded-[2.5rem] border border-[#EBF2EE] flex gap-6 items-center shadow-sm hover:translate-x-2 transition-all">
+                          <div className="w-14 h-14 rounded-full bg-[#F9F1EF] flex items-center justify-center flex-shrink-0 shadow-inner">
+                            <Heart className="text-[#D1978F] w-7 h-7" />
                           </div>
-                          <div className="p-8 bg-gray-50 border-t border-gray-100 flex justify-end">
-                            <button
-                              disabled={Object.keys(quizAnswers).length < content.screeningQuiz.questions.length}
-                              onClick={() => setShowQuizResult(true)}
-                              className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-indigo-200 flex items-center gap-2"
-                            >
-                              <CheckCircle size={20} />
-                              {content.screeningQuiz.seeResults}
-                            </button>
-                          </div>
+                          <p className="text-[#3D5245] font-serif text-lg font-medium">{strategy}</p>
                         </div>
-                      </div>
-                    ) : (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="space-y-8"
-                      >
-                        {(() => {
-                          const result = calculateQuizResult();
-                          const score = Object.values(quizAnswers).filter(Boolean).length;
-                          return (
-                            <div className="bg-white p-10 md:p-16 rounded-[3rem] border border-gray-100 shadow-xl text-center space-y-8 relative overflow-hidden">
-                              <div className="absolute top-0 left-0 w-full h-2 bg-indigo-600" />
-                              <div className="space-y-4">
-                                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-indigo-50 text-indigo-600 mb-4">
-                                  <Brain size={40} />
-                                </div>
-                                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">{content.screeningQuiz.resultTitle}</h3>
-                                <h4 className="text-4xl font-black text-gray-900">{result?.title}</h4>
-                                <div className="text-6xl font-black text-indigo-600">{score}/10</div>
-                              </div>
-                              
-                              <div className="max-w-xl mx-auto space-y-6">
-                                <p className="text-gray-600 text-lg leading-relaxed">
-                                  {result?.text}
-                                </p>
-                                
-                                <div className="p-8 bg-indigo-50 rounded-3xl space-y-2">
-                                  <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest">{content.screeningQuiz.iqRangeLabel}</span>
-                                  <div className="text-3xl font-black text-indigo-700">{result?.potentialIQ}</div>
-                                  <p className="text-[10px] text-indigo-300 italic">{content.screeningQuiz.iqDisclaimer}</p>
-                                </div>
-                              </div>
-
-                              <div className="flex flex-col md:flex-row gap-4 justify-center pt-8">
-                                <button
-                                  onClick={resetQuiz}
-                                  className="px-8 py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
-                                >
-                                  <RefreshCw size={20} />
-                                  {content.screeningQuiz.retake}
-                                </button>
-                                <button
-                                  onClick={() => setActiveSection('testing')}
-                                  className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2"
-                                >
-                                  <ClipboardCheck size={20} />
-                                  {content.screeningQuiz.learnTesting}
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </motion.div>
-                    )}
+                      ))}
+                    </div>
                   </div>
                 )}
 
                 {activeSection === 'local' && (
-                  <div className="space-y-8">
+                  <div className="space-y-12">
                     <div className="max-w-2xl">
-                      <h2 className="text-4xl font-bold tracking-tight mb-4">{content.local.title}</h2>
-                      <p className="text-xl text-gray-600 leading-relaxed">
+                      <h2 className="text-5xl font-serif font-bold tracking-tight mb-4 text-[#2D3A30]">{content.local.title}</h2>
+                      <p className="text-xl text-[#4F6153] leading-relaxed font-serif italic">
                         {content.local.description}
                       </p>
                     </div>
 
-                    <form onSubmit={handleSearch} className="relative max-w-xl">
+                    <form onSubmit={handleSearch} className="relative max-w-2xl">
                       <input
                         type="text"
                         value={citySearch}
                         onChange={(e) => setCitySearch(e.target.value)}
                         placeholder={content.local.placeholder}
-                        className="w-full pl-12 pr-32 py-4 bg-white rounded-2xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none shadow-sm transition-all"
+                        className="w-full pl-14 pr-36 py-5 bg-white rounded-3xl border border-[#C9DED2] focus:ring-2 focus:ring-[#8FB996]/30 focus:border-transparent outline-none shadow-sm transition-all font-medium"
                       />
-                      <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                      <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-[#A7BDB1]" size={24} />
                       <button
                         type="submit"
                         disabled={isSearching}
-                        className="absolute right-2 top-2 bottom-2 px-6 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                        className="absolute right-3 top-3 bottom-3 px-8 bg-[#8FB996] text-white rounded-2xl font-bold text-sm hover:bg-[#7DA884] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 shadow-sm"
                       >
                         {isSearching ? <Loader2 className="animate-spin" size={16} /> : content.local.search}
                       </button>
@@ -616,8 +720,8 @@ export default function App() {
 
                     {isSearching && (
                       <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
-                        <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin" />
-                        <p className="text-gray-500 font-medium">{content.local.searching}</p>
+                        <div className="w-16 h-16 border-4 border-[#EBF2EE] border-t-[#8FB996] rounded-full animate-spin" />
+                        <p className="text-[#627A6C] font-medium italic">{content.local.searching}</p>
                       </div>
                     )}
 
@@ -625,31 +729,31 @@ export default function App() {
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="space-y-8"
+                        className="space-y-12"
                       >
-                        <div className="bg-white p-8 md:p-12 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                          <div className="markdown-body prose prose-indigo max-w-none">
+                        <div className="bg-white p-10 md:p-16 rounded-[3.5rem] border border-[#EBF2EE] shadow-sm">
+                          <div className="markdown-body prose prose-stone max-w-none prose-p:text-[#4F6153] prose-headings:text-[#2D3A30]">
                             <Markdown>{searchResult}</Markdown>
                           </div>
                         </div>
 
                         {groundingLinks.length > 0 && (
-                          <div className="space-y-4">
-                            <h3 className="text-lg font-bold flex items-center gap-2">
-                              <ExternalLink size={20} className="text-indigo-600" />
+                          <div className="space-y-6">
+                            <h3 className="text-2xl font-serif font-bold flex items-center gap-3 text-[#3D5245]">
+                              <ExternalLink size={24} className="text-[#8FB996]" />
                               {content.local.sources}
                             </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               {groundingLinks.map((link, i) => (
                                 <a
                                   key={i}
                                   href={link.uri}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="p-4 bg-white border border-gray-100 rounded-xl hover:border-indigo-200 hover:shadow-sm transition-all flex items-center justify-between group"
+                                  className="p-6 bg-white border border-[#EBF2EE] rounded-[2rem] hover:border-[#8FB996] hover:shadow-md transition-all flex items-center justify-between group"
                                 >
-                                  <span className="text-sm font-medium text-gray-700 truncate mr-4">{link.title || link.uri}</span>
-                                  <ChevronRight size={16} className="text-gray-300 group-hover:text-indigo-600 transition-colors flex-shrink-0" />
+                                  <span className="text-sm font-medium text-[#4F6153] truncate mr-4">{link.title || link.uri}</span>
+                                  <ChevronRight size={18} className="text-[#C9DED2] group-hover:text-[#8FB996] transition-colors flex-shrink-0" />
                                 </a>
                               ))}
                             </div>
@@ -659,27 +763,20 @@ export default function App() {
                     )}
 
                     {!searchResult && !isSearching && (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8">
-                        <div className="p-8 bg-white rounded-3xl border border-gray-100 text-center space-y-4">
-                          <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto">
-                            <Scale className="text-indigo-600" />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8">
+                        <div className="p-10 bg-white rounded-[2.5rem] border border-[#F0F2F1] text-center space-y-6 shadow-sm hover:shadow-md transition-shadow">
+                          <div className="w-14 h-14 bg-[#F4FAF6] rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+                            <Stethoscope className="text-[#72A181]" size={28} />
                           </div>
-                          <h3 className="font-bold">{content.local.legislation}</h3>
-                          <p className="text-sm text-gray-500">{content.local.legislationDesc}</p>
+                          <h3 className="font-serif text-xl font-bold text-[#3D5245]">{content.local.specialists}</h3>
+                          <p className="text-sm text-[#627A6C] leading-relaxed">{content.local.specialistsDesc}</p>
                         </div>
-                        <div className="p-8 bg-white rounded-3xl border border-gray-100 text-center space-y-4">
-                          <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto">
-                            <Stethoscope className="text-emerald-600" />
+                        <div className="p-10 bg-white rounded-[2.5rem] border border-[#F0F2F1] text-center space-y-6 shadow-sm hover:shadow-md transition-shadow">
+                          <div className="w-14 h-14 bg-[#FAF7F0] rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+                            <GraduationCap className="text-[#B9A68F]" size={28} />
                           </div>
-                          <h3 className="font-bold">{content.local.specialists}</h3>
-                          <p className="text-sm text-gray-500">{content.local.specialistsDesc}</p>
-                        </div>
-                        <div className="p-8 bg-white rounded-3xl border border-gray-100 text-center space-y-4">
-                          <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto">
-                            <GraduationCap className="text-amber-600" />
-                          </div>
-                          <h3 className="font-bold">{content.local.schools}</h3>
-                          <p className="text-sm text-gray-500">{content.local.schoolsDesc}</p>
+                          <h3 className="font-serif text-xl font-bold text-[#3D5245]">{content.local.schools}</h3>
+                          <p className="text-sm text-[#627A6C] leading-relaxed">{content.local.schoolsDesc}</p>
                         </div>
                       </div>
                     )}
@@ -692,20 +789,20 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-24 border-t border-gray-100 bg-white py-12">
+      <footer className="mt-24 border-t border-[#E1EDE6] bg-white py-16 print:hidden">
         <div className="max-w-6xl mx-auto px-4 text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Lightbulb className="text-indigo-600 w-6 h-6" />
-            <span className="text-xl font-bold tracking-tight">GiftedMind</span>
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <Lightbulb className="text-[#8FB996] w-8 h-8" />
+            <span className="text-2xl font-serif font-bold tracking-tight text-[#3D5245]">Altas Habilidades</span>
           </div>
-          <p className="text-gray-500 text-sm max-w-md mx-auto leading-relaxed">
+          <p className="text-[#627A6C] text-sm max-w-md mx-auto leading-relaxed font-serif italic">
             {content.footer.tagline}
           </p>
-          <div className="mt-8 flex justify-center gap-6">
-            <a href="#" className="text-gray-400 hover:text-indigo-600 transition-colors"><Users size={20} /></a>
-            <a href="#" className="text-gray-400 hover:text-indigo-600 transition-colors"><Info size={20} /></a>
+          <div className="mt-10 flex justify-center gap-8">
+            <a href="#" className="text-[#A7BDB1] hover:text-[#8FB996] transition-all transform hover:scale-110"><Users size={24} /></a>
+            <a href="#" className="text-[#A7BDB1] hover:text-[#8FB996] transition-all transform hover:scale-110"><Info size={24} /></a>
           </div>
-          <p className="mt-8 text-xs text-gray-400">{content.footer.copyright}</p>
+          <p className="mt-12 text-xs text-[#A7BDB1] font-medium tracking-widest uppercase">{content.footer.copyright}</p>
         </div>
       </footer>
     </div>

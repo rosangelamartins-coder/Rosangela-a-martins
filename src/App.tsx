@@ -31,19 +31,14 @@ import {
   ClipboardList
 } from 'lucide-react';
 import { GIFTED_CONTENT, LANGUAGES, Language } from './data/content';
-import { GoogleGenAI } from "@google/genai";
 import Markdown from 'react-markdown';
 import GiftednessChecklist from './components/GiftednessChecklist';
 
-type SectionId = 'overview' | 'discovery' | 'testing' | 'parenting' | 'proscons' | 'local' | 'checklist' | 'schoolImprovement';
+type SectionId = 'overview' | 'discovery' | 'testing' | 'parenting' | 'proscons' | 'checklist' | 'schoolImprovement';
 
 export default function App() {
   const [language, setLanguage] = useState<Language>('pt');
   const [activeSection, setActiveSection] = useState<SectionId>('overview');
-  const [citySearch, setCitySearch] = useState('');
-  const [searchResult, setSearchResult] = useState<string | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
-  const [groundingLinks, setGroundingLinks] = useState<{ uri: string; title: string }[]>([]);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [expandedSchoolSection, setExpandedSchoolSection] = useState<number | null>(null);
   const [expandedOverviewSection, setExpandedOverviewSection] = useState<number | null>(null);
@@ -58,50 +53,7 @@ export default function App() {
     { id: 'schoolImprovement', label: content.nav.schoolImprovement, icon: GraduationCap },
     { id: 'proscons', label: content.nav.proscons, icon: PlusCircle },
     { id: 'parenting', label: content.nav.parenting, icon: Heart },
-    { id: 'local', label: content.nav.local, icon: MapPin },
   ];
-
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!citySearch.trim()) return;
-
-    setIsSearching(true);
-    setSearchResult(null);
-    setGroundingLinks([]);
-
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Provide a comprehensive guide for gifted children resources in ${citySearch}. 
-        Include:
-        1. Local or national legislation/laws regarding gifted education in this region.
-        2. 5 specific specialists or clinics (names and locations) that perform gifted/IQ testing in or near ${citySearch}.
-        3. 5 highly-regarded schools (public or private) known for their gifted programs or knowledge in ${citySearch}.
-        
-        IMPORTANT: Respond entirely in ${LANGUAGES.find(l => l.code === language)?.label} language.
-        Format the response using Markdown with clear headings.`,
-        config: {
-          tools: [{ googleSearch: {} }],
-        },
-      });
-
-      setSearchResult(response.text || "No results found.");
-      
-      const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-      if (chunks) {
-        const links = chunks
-          .filter(chunk => chunk.web)
-          .map(chunk => ({ uri: chunk.web!.uri, title: chunk.web!.title }));
-        setGroundingLinks(links);
-      }
-    } catch (error) {
-      console.error("Search error:", error);
-      setSearchResult("An error occurred while searching. Please try again.");
-    } finally {
-      setIsSearching(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#F7FAF8] text-[#2D3A30] font-sans selection:bg-[#E2F0E9] selection:text-[#3D5245]">
@@ -688,98 +640,6 @@ export default function App() {
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
-
-                {activeSection === 'local' && (
-                  <div className="space-y-12">
-                    <div className="max-w-2xl">
-                      <h2 className="text-5xl font-serif font-bold tracking-tight mb-4 text-[#2D3A30]">{content.local.title}</h2>
-                      <p className="text-xl text-[#4F6153] leading-relaxed font-serif italic">
-                        {content.local.description}
-                      </p>
-                    </div>
-
-                    <form onSubmit={handleSearch} className="relative max-w-2xl">
-                      <input
-                        type="text"
-                        value={citySearch}
-                        onChange={(e) => setCitySearch(e.target.value)}
-                        placeholder={content.local.placeholder}
-                        className="w-full pl-14 pr-36 py-5 bg-white rounded-3xl border border-[#C9DED2] focus:ring-2 focus:ring-[#8FB996]/30 focus:border-transparent outline-none shadow-sm transition-all font-medium"
-                      />
-                      <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-[#A7BDB1]" size={24} />
-                      <button
-                        type="submit"
-                        disabled={isSearching}
-                        className="absolute right-3 top-3 bottom-3 px-8 bg-[#8FB996] text-white rounded-2xl font-bold text-sm hover:bg-[#7DA884] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 shadow-sm"
-                      >
-                        {isSearching ? <Loader2 className="animate-spin" size={16} /> : content.local.search}
-                      </button>
-                    </form>
-
-                    {isSearching && (
-                      <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
-                        <div className="w-16 h-16 border-4 border-[#EBF2EE] border-t-[#8FB996] rounded-full animate-spin" />
-                        <p className="text-[#627A6C] font-medium italic">{content.local.searching}</p>
-                      </div>
-                    )}
-
-                    {searchResult && !isSearching && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="space-y-12"
-                      >
-                        <div className="bg-white p-10 md:p-16 rounded-[3.5rem] border border-[#EBF2EE] shadow-sm">
-                          <div className="markdown-body prose prose-stone max-w-none prose-p:text-[#4F6153] prose-headings:text-[#2D3A30]">
-                            <Markdown>{searchResult}</Markdown>
-                          </div>
-                        </div>
-
-                        {groundingLinks.length > 0 && (
-                          <div className="space-y-6">
-                            <h3 className="text-2xl font-serif font-bold flex items-center gap-3 text-[#3D5245]">
-                              <ExternalLink size={24} className="text-[#8FB996]" />
-                              {content.local.sources}
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              {groundingLinks.map((link, i) => (
-                                <a
-                                  key={i}
-                                  href={link.uri}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="p-6 bg-white border border-[#EBF2EE] rounded-[2rem] hover:border-[#8FB996] hover:shadow-md transition-all flex items-center justify-between group"
-                                >
-                                  <span className="text-sm font-medium text-[#4F6153] truncate mr-4">{link.title || link.uri}</span>
-                                  <ChevronRight size={18} className="text-[#C9DED2] group-hover:text-[#8FB996] transition-colors flex-shrink-0" />
-                                </a>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </motion.div>
-                    )}
-
-                    {!searchResult && !isSearching && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8">
-                        <div className="p-10 bg-white rounded-[2.5rem] border border-[#F0F2F1] text-center space-y-6 shadow-sm hover:shadow-md transition-shadow">
-                          <div className="w-14 h-14 bg-[#F4FAF6] rounded-2xl flex items-center justify-center mx-auto shadow-inner">
-                            <Stethoscope className="text-[#72A181]" size={28} />
-                          </div>
-                          <h3 className="font-serif text-xl font-bold text-[#3D5245]">{content.local.specialists}</h3>
-                          <p className="text-sm text-[#627A6C] leading-relaxed">{content.local.specialistsDesc}</p>
-                        </div>
-                        <div className="p-10 bg-white rounded-[2.5rem] border border-[#F0F2F1] text-center space-y-6 shadow-sm hover:shadow-md transition-shadow">
-                          <div className="w-14 h-14 bg-[#FAF7F0] rounded-2xl flex items-center justify-center mx-auto shadow-inner">
-                            <GraduationCap className="text-[#B9A68F]" size={28} />
-                          </div>
-                          <h3 className="font-serif text-xl font-bold text-[#3D5245]">{content.local.schools}</h3>
-                          <p className="text-sm text-[#627A6C] leading-relaxed">{content.local.schoolsDesc}</p>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
               </motion.div>

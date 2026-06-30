@@ -20,9 +20,16 @@ export default function GiftednessChecklist({ content }: GiftednessChecklistProp
   const [formData, setFormData] = useState({
     name: '',
     age: '',
-    date: new Date().toISOString().split('T')[0],
+    date: '',
     evaluator: ''
   });
+
+  React.useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      date: new Date().toISOString().split('T')[0]
+    }));
+  }, []);
 
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [showReport, setShowReport] = useState(false);
@@ -116,8 +123,12 @@ export default function GiftednessChecklist({ content }: GiftednessChecklistProp
               spacing: { before: 400, after: 400 },
             }),
             new Paragraph({
-              text: checklistData.labels.disclaimer,
-              italics: true,
+              children: [
+                new TextRun({
+                  text: checklistData.labels.disclaimer,
+                  italics: true,
+                })
+              ],
               alignment: AlignmentType.CENTER,
               spacing: { before: 400 },
             }),
